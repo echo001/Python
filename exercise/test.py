@@ -1,30 +1,21 @@
-#url:https://proxy.ip3366.net/free/?action=china&page=1
-import requests
-import re
-from lxml import etree
-from io import BytesIO
-#content > section > div.container > table > tbody > tr:nth-child(5) > td:nth-child(1)
+import pandas as pd
+data1 = {'IP': '49.86.9.86', 'Port': '9999', '地址': ['中国  江苏  扬州'], '运营商': ['电信']}
+data2 = {'IP': '49.86.9.86', 'Port': '9999', '地址': ['中国  江苏  扬州'], '运营商': ['电信']}
+data3 = list(data1)
+pf = pd.DataFrame({'IP': '49.86.9.86', 'Port': '9999', '地址': ['中国  江苏  扬州'], '运营商': ['电信']})
+order = ['IP', 'Port', '地址', '运营商'] #指定输出字段顺序
+pf = pf[order]
+columns = {
+'IP':'IP',
+'Port':'端口',
+'地址':'地址',
+'运营商':'运营商'
+}
+pf.rename(columns=columns)
+file_path = pd.ExcelWriter('D:/test/Code/exercise/reptile/data/reptile_verify.xlsx')
+pf.fillna(' ', inplace=True)    #替换空单元格
+pf.to_excel(file_path, encoding='utf-8', index=False)
+file_path.save()
 
-url = 'https://proxy.ip3366.net/free/?action=china&page=1'
-url2 = 'http://www.cip.cc/'
 
-def url_request(url):
-    s = requests.session()
-    s.keep_alive = False    #防止http连接过多
-    response = requests.get(url)
-    return response
-
-def ip_port(url):
-    response = url_request(url)
-    content = response.content
-    parser = etree.HTMLParser()
-    content = etree.parse(BytesIO(content), parser=parser)
-    doc = dict()
-    for ip in content.findall('//td[1]'):
-        IP = ip.text
-        print(IP)
-    for port in content.findall('//td[2]'):
-        PORT = port.text
-
-if __name__ == '__main__':
-    data = ip_port(url)
+print(data3)
