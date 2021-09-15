@@ -2,25 +2,33 @@
 import requests
 import re
 import time
-import pandas as pd
 import peewee
+from peewee import *
+from lxml import etree
 from io import BytesIO
 #content > section > div.container > table > tbody > tr:nth-child(5) > td:nth-child(1)
-#数据库设定
-settings = {'host':'localhost', 'password':'Zpepc001@', 'port':3306, 'user':'root'}
-db = peewee.MySQLDatabase("test", **settings)
-
-class Person(Model):
-    ip = charField(verbost_name='IP', max_length=20, null=False, index=True)
-    port = charField(verbose_name='Port', max_length=10, null=False)
-    address = charField(verbose_name='地址', max_length=20)
-    business = charField(verbose_name='运营商', max_length=20)
-    class Meta:
-        database = db   #建立数据库链接
-        table_name = 'proxyip'
+#数据库设定，reptile数据库名，如果没有，需要进入mysql自建一个
+db = MySQLDatabase('reptile', host='127.0.0.1', user='root', passwd='Zpepc001@', port=3306)
 db.connect()    #数据库连接
 print(db.is_closed())   #判断数据库是不是链接好
 
+class BaseModel(Model):
+    class Meta:
+        database = db
+class Person(BaseModel):
+    IP = CharField(verbose_name='IP', max_length=20, null=False, index=True)
+    Port = CharField(verbose_name='Port', max_length=10, null=False)
+    Address = CharField(verbose_name='地址', max_length=20)
+    Business = CharField(verbose_name='运营商', max_length=20)
+    class Meta:
+        primary_key = CompositeKey('IP', 'Port')
+#db.create_tables([Person]) 只需运行一次，已经创建好名为person的表
+
+def store_data(data):   #存储数据到mysql数据库
+    try:    #联合主键设置，IP,Port数据一样时，插入数据产生报错
+        Person.insert_many(data).execute()  #插入数据
+    except:
+        print('------data repetition------')
 
 def url_request(url, headers=None): #连接
     s = requests.session()
@@ -54,7 +62,7 @@ def verify(ip): #查询地址及运营商
 #    print(addr,business)
     return addr,business
 
-def ip_port(url, count):   #爬取代理IP,count是条数计数，便于excel数据行插入
+def ip_port(url):   #爬取代理IP,count是条数计数，便于excel数据行插入
     content = url_request(url)
     doc = []
     for (ip,port) in zip(content.findall('//td[1]'),content.findall('//td[2]')): #同时对ip，port遍历，list类型
@@ -62,30 +70,17 @@ def ip_port(url, count):   #爬取代理IP,count是条数计数，便于excel数
         PORT = port.text
         (addr,business) = verify(IP)    #查询地址以及运营商
 #        print(IP)
-        doc = [{'IP': IP, 'Port': PORT, '地址': addr, '运营商': business}]
-        count += 1
+        doc = [{'IP': IP, 'Port': PORT, 'Address': addr, 'Business': business}]
+#        count += 1
         print(doc)
-        export_excel(doc, count)
-    return count
-
-def export_excel(doc, i):   #输出到excel文件，i表示行
-    file_path = 'D:/test/Code/exercise/reptile/data/reptile_verify.xlsx'
-    ws = openpyxl.load_workbook(filename=file_path, data_only=True)
-    excel_sheet = ws.worksheets[0]
-    ws1 = ws.active
-    for column in range(1,5):
-        ws1.cell(column=1, row=i).value = doc[0]['IP']
-        ws1.cell(column=2, row=i).value = doc[0]['Port']
-        ws1.cell(column=3, row=i).value = ''.join(doc[0]['地址']) #数据列表转成字符串
-        ws1.cell(column=4, row=i).value = ''.join(doc[0]['运营商'])
-    ws.save(filename=file_path)
+        store_data(doc)
+#    return count
 
 if __name__ == '__main__':
-    url = 'https://proxy.ip3366.net/free/?action=china&page=140'
+    url = 'https://proxy.ip3366.net/free/?action=china&page=1'
     urlsplit = url.split('=')
-    count = 1180
-    for i in range(140,481):  #代理页面有481页，循环481次读取
-        count = ip_port(url, count)
+    for i in range(0,481):  #代理页面有481页，循环481次读取
+        ip_port(url)
         urlsplit[2] = int(urlsplit[2])
         urlsplit[2] += 1
         url = urlsplit[0] + urlsplit[1] + '=' + str(urlsplit[2])
