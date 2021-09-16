@@ -8,7 +8,7 @@ from lxml import etree
 from io import BytesIO
 #content > section > div.container > table > tbody > tr:nth-child(5) > td:nth-child(1)
 #数据库设定，reptile数据库名，如果没有，需要进入mysql自建一个
-db = MySQLDatabase('reptile', host='127.0.0.1', user='root', passwd='Zpepc001@', port=3306)
+db = MySQLDatabase('reptile', host='127.0.0.1', user='root', passwd='helloworld', port=3306)
 db.connect()    #数据库连接
 print(db.is_closed())   #判断数据库是不是链接好
 
@@ -77,7 +77,7 @@ def ip_port(url):   #爬取代理IP,count是条数计数，便于excel数据行�
 #    return count
 
 if __name__ == '__main__':
-    url = 'https://proxy.ip3366.net/free/?action=china&page=1'
+    url = 'https://proxy.ip3366.net/free/?action=china&page=9'
     urlsplit = url.split('=')
     for i in range(0,481):  #代理页面有481页，循环481次读取
         ip_port(url)
