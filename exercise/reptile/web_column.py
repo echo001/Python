@@ -15,15 +15,7 @@ from peewee import *
 db = MySQLDatabase('reptile', host='127.0.0.1', user='root', passwd='helloworld', port=3306)
 db.connect()    #数据库连接
 print(db.is_closed())   #判断数据库是不是链接好
-df = pd.read_sql("SELECT * FROM person", db)
-print(df.columns[0])
+df = pd.read_sql("SELECT Address FROM person", db)
 
-app = dash.Dash(__name__)
-app.layout = dash_table.DataTable(
-    id = 'table',
-    columns = [{"name":i, "id":i} for i in df.columns],
-    data = df.to_dict('records'),
-)
-
-if __name__ == '__main__':
-    app.run_server(debug=True)
+str_df = ''.join(df)
+print(str_df)
